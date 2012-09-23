@@ -42,8 +42,6 @@ Known capabilities that are not supported:
 
 import collections
 import os
-import os.path
-import re
 import socket
 import SocketServer
 import sys
@@ -82,8 +80,9 @@ from dulwich.repo import (
     Repo,
     )
 
-from verification import VerificationServer
-from repo_store.store import FileSystemRepositoryStore
+from model_server import ModelServer
+from repo.store import FileSystemRepositoryStore
+from util import repositories
 
 logger = log_utils.getLogger(__name__)
 
@@ -610,6 +609,7 @@ class ReceivePackHandler(Handler):
                  advertise_refs=False):
         Handler.__init__(self, backend, proto, http_req=http_req)
         self.repo = backend.open_repository(args[0])
+        self.user_id = int(args[1])
         self.advertise_refs = advertise_refs
 
     @classmethod
@@ -646,11 +646,9 @@ class ReceivePackHandler(Handler):
                 else:
                     try:
                         # if this branch needs to be verified, lie to the client and send a verification command to the verification server
-                        if re.search('^refs/for/', ref):
+                        if ref.startswith('refs/for/', ref): #if re.search('^refs/for/', ref):
                             repo_hash = self._get_repo_hash()
-                            client = VerificationServer.get_connection()
-                            client.verify(repo_hash, sha, ref)
-                            client.close()
+                            self._store_pending_ref_and_trigger_build(sha, repo_hash, ref[len('refs/for/'):])
                         else:
                             self.repo.refs[ref] = sha
                     except all_exceptions:
@@ -660,6 +658,17 @@ class ReceivePackHandler(Handler):
             status.append((ref, ref_status))
 
         return status
+
+    def _store_pending_ref_and_trigger_build(self, sha, repo_hash, merge_target):
+        commit = self.repo.commit(sha)
+        with ModelServer.rpc_connect("change", "create") as client:
+            commit_id = client.mark_pending_commit_and_merge_target(
+				repo_hash,
+				self.user_id,
+                commit.message,
+				merge_target)
+        pending_change_ref = repositories.hidden_ref(commit_id)
+        self.repo.refs[pending_change_ref] = sha
 
     def _get_repo_hash(self):
         path = os.path.realpath(self.repo.controldir())
