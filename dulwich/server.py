@@ -82,7 +82,7 @@ from dulwich.repo import (
 
 from model_server import ModelServer
 from repo.store import FileSystemRepositoryStore
-from util import repositories
+from util import pathgen
 
 logger = log_utils.getLogger(__name__)
 
@@ -667,7 +667,7 @@ class ReceivePackHandler(Handler):
 				self.user_id,
                 commit.message,
 				merge_target)
-        pending_change_ref = repositories.hidden_ref(commit_id)
+        pending_change_ref = pathgen.hidden_ref(commit_id)
         self.repo.refs[pending_change_ref] = sha
 
     def _get_repo_hash(self):
