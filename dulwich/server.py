@@ -81,7 +81,6 @@ from dulwich.repo import (
     )
 
 from model_server import ModelServer
-from repo.store import FileSystemRepositoryStore
 from util import pathgen
 
 logger = log_utils.getLogger(__name__)
@@ -674,7 +673,7 @@ class ReceivePackHandler(Handler):
         path = os.path.realpath(self.repo.controldir())
         # We start 2 from the back of the list because of ['repo_name', '.git']
         hash_path_end_index = -2
-        hash_path_start_index = hash_path_end_index - FileSystemRepositoryStore.DIR_LEVELS
+        hash_path_start_index = hash_path_end_index - pathgen.DIR_LEVELS
         return ''.join(path.split('/')[hash_path_start_index:hash_path_end_index])
 
     def _report_status(self, status):
