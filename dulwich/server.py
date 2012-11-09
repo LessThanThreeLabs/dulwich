@@ -645,7 +645,7 @@ class ReceivePackHandler(Handler):
                 else:
                     try:
                         # if this branch needs to be verified, lie to the client and send a verification command to the verification server
-                        if ref.startswith('refs/for/', ref): #if re.search('^refs/for/', ref):
+                        if ref.startswith('refs/for/'): #if re.search('^refs/for/', ref):
                             repo_hash = self._get_repo_hash()
                             self._store_pending_ref_and_trigger_build(sha, repo_hash, ref[len('refs/for/'):])
                         else:
