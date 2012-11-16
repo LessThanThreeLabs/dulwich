@@ -643,11 +643,12 @@ class ReceivePackHandler(Handler):
                 else:
                     try:
                         # if this branch needs to be verified, lie to the client and send a verification command to the verification server
-                        if ref.startswith('refs/for/'): #if re.search('^refs/for/', ref):
-                            repo_hash = self._get_repo_hash()
-                            self._store_pending_ref_and_trigger_build(sha, repo_hash, ref[len('refs/for/'):])
+                        if ref.startswith('refs/force/'):
+                            target_ref = "refs/heads/" + ref[len('refs/force/'):]
+                            self.repo.refs[target_ref] = sha
                         else:
-                            self.repo.refs[ref] = sha
+                            repo_hash = self._get_repo_hash()
+                            self._store_pending_ref_and_trigger_build(sha, repo_hash, ref)
                     except all_exceptions:
                         ref_status = 'failed to write'
             except KeyError, e:
@@ -660,10 +661,10 @@ class ReceivePackHandler(Handler):
         commit = self.repo.commit(sha)
         with ModelServer.rpc_connect("changes", "create") as client:
             commit_id = client.mark_pending_commit_and_merge_target(
-				repo_hash,
-				self.user_id,
+                repo_hash,
+                self.user_id,
                 commit.message,
-				merge_target)
+                merge_target)
         pending_change_ref = pathgen.hidden_ref(commit_id)
         self.repo.refs[pending_change_ref] = sha
 
