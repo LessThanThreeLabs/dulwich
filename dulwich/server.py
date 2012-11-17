@@ -618,15 +618,19 @@ class ReceivePackHandler(Handler):
                           AssertionError, socket.error, zlib.error,
                           ObjectFormatException)
         status = []
-        # TODO: more informative error messages than just the exception string
-        try:
-            recv = getattr(self.proto, "recv", None)
-            p = self.repo.object_store.add_thin_pack(self.proto.read, recv)
+        # Don't try to unpack if there's nothing to unpack
+        if len(refs) == 1 and refs[0][1] == ZERO_SHA:
             status.append(('unpack', 'ok'))
-        except all_exceptions, e:
-            status.append(('unpack', str(e).replace('\n', '')))
-            # The pack may still have been moved in, but it may contain broken
-            # objects. We trust a later GC to clean it up.
+        else:
+            # TODO: more informative error messages than just the exception string
+            try:
+                recv = getattr(self.proto, "recv", None)
+                p = self.repo.object_store.add_thin_pack(self.proto.read, recv)
+                status.append(('unpack', 'ok'))
+            except all_exceptions, e:
+                status.append(('unpack', str(e).replace('\n', '')))
+                # The pack may still have been moved in, but it may contain broken
+                # objects. We trust a later GC to clean it up.
 
         for oldsha, sha, ref in refs:
             ref_status = 'ok'
