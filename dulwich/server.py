@@ -647,12 +647,12 @@ class ReceivePackHandler(Handler):
                 else:
                     try:
                         # if this branch needs to be verified, lie to the client and send a verification command to the verification server
-                        if ref.startswith('refs/force/'):
-                            target_ref = "refs/heads/" + ref[len('refs/force/'):]
-                            self.repo.refs[target_ref] = sha
-                        else:
+                        if ref.startswith('refs/heads/'):
                             repo_hash = self._get_repo_hash()
-                            self._store_pending_ref_and_trigger_build(sha, repo_hash, ref)
+                            self._store_pending_ref_and_trigger_build(sha, repo_hash, ref[len('refs/heads/'):])
+                        else:
+                            target_ref = "refs/heads/" + ref[len('refs/force/'):] if ref.startswith('refs/force/') else ref
+                            self.repo.refs[target_ref] = sha
                     except all_exceptions:
                         ref_status = 'failed to write'
             except KeyError, e:
