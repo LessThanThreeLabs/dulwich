@@ -648,7 +648,8 @@ class ReceivePackHandler(Handler):
                     try:
                         # if this branch needs to be verified, lie to the client and send a verification command to the verification server
                         if ref.startswith('refs/heads/'):
-                            repo_hash = self._get_repo_hash()
+                            path = os.path.realpath(self.repo.controldir())
+                            repo_hash = pathgen.get_repo_hash(path)
                             self._store_pending_ref_and_trigger_build(sha, repo_hash, ref[len('refs/heads/'):])
                         else:
                             target_ref = "refs/heads/" + ref[len('refs/force/'):] if ref.startswith('refs/force/') else ref
@@ -671,13 +672,6 @@ class ReceivePackHandler(Handler):
                 merge_target)
         pending_change_ref = pathgen.hidden_ref(commit_id)
         self.repo.refs[pending_change_ref] = sha
-
-    def _get_repo_hash(self):
-        path = os.path.realpath(self.repo.controldir())
-        # We start 2 from the back of the list because of ['repo_name', '.git']
-        hash_path_end_index = -1
-        hash_path_start_index = hash_path_end_index - pathgen.DIR_LEVELS
-        return ''.join(path.split('/')[hash_path_start_index:hash_path_end_index])
 
     def _report_status(self, status):
         if self.has_capability('side-band-64k'):
