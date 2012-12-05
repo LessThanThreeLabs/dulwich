@@ -664,8 +664,8 @@ class ReceivePackHandler(Handler):
 
     def _store_pending_ref_and_trigger_build(self, sha, repo_hash, merge_target):
         commit = self.repo.commit(sha)
-        with ModelServer.rpc_connect("repos", "update") as client:
-            commit_id = client.mark_pending_commit_and_merge_target(
+        with ModelServer.rpc_connect("changes", "create") as client:
+            commit_id = client.create_commit_and_change(
                 repo_hash,
                 self.user_id,
                 commit.message,
