@@ -669,7 +669,7 @@ class ReceivePackHandler(Handler):
                 repo_hash,
                 self.user_id,
                 commit.message,
-                merge_target)
+                merge_target)["commit_id"]
         pending_change_ref = pathgen.hidden_ref(commit_id)
         self.repo.refs[pending_change_ref] = sha
 
