@@ -649,8 +649,8 @@ class ReceivePackHandler(Handler):
                         # if this branch needs to be verified, lie to the client and send a verification command to the verification server
                         if ref.startswith('refs/heads/'):
                             path = os.path.realpath(self.repo.controldir())
-                            repo_hash = pathgen.get_repo_hash(path)
-                            self._store_pending_ref_and_trigger_build(sha, repo_hash, ref[len('refs/heads/'):])
+                            repo_id = pathgen.get_repo_id(path)
+                            self._store_pending_ref_and_trigger_build(sha, repo_id, ref[len('refs/heads/'):])
                         else:
                             target_ref = "refs/heads/" + ref[len('refs/force/'):] if ref.startswith('refs/force/') else ref
                             self.repo.refs[target_ref] = sha
@@ -662,11 +662,11 @@ class ReceivePackHandler(Handler):
 
         return status
 
-    def _store_pending_ref_and_trigger_build(self, sha, repo_hash, merge_target):
+    def _store_pending_ref_and_trigger_build(self, sha, repo_id, merge_target):
         commit = self.repo.commit(sha)
         with ModelServer.rpc_connect("changes", "create") as client:
             commit_id = client.create_commit_and_change(
-                repo_hash,
+                repo_id,
                 self.user_id,
                 commit.message,
                 merge_target)["commit_id"]
